@@ -2,10 +2,13 @@
 import { useRouter } from 'vue-router'
 import { useFirebaseAuth, useCurrentUser } from 'vuefire'
 import { signOut } from 'firebase/auth'
+import AddTeamModal from './AddTeamModal.vue'
+import { useUserStore } from '@/stores/userStore'
 
 const auth = useFirebaseAuth()
 const router = useRouter()
 const user = useCurrentUser()
+const userStore = useUserStore()
 
 const handleSignOut = async () => {
   if (!auth) return
@@ -27,6 +30,13 @@ const handleSignOut = async () => {
     </template>
 
     <v-list>
+      <v-list-item v-if="userStore.team">
+        {{ userStore.team.name }}
+      </v-list-item>
+      <v-list-item v-else>
+        <AddTeamModal />
+      </v-list-item>
+      <v-divider />
       <v-list-item>
         <template v-slot:prepend>
           <v-icon icon="mdi-account" />

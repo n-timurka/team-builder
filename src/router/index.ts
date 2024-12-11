@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
-import { getCurrentUser } from 'vuefire'
-import { collection, doc, getDoc, getFirestore } from 'firebase/firestore'
+import { useUserStore } from '@/stores/userStore'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -27,16 +26,14 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  const userStore = useUserStore()
+  await userStore.fetchUser()
+
   if (!to.meta.roles) return
 
-  const user = await getCurrentUser()
-  if (!user) return { name: 'home' }
+  if (!userStore.user) return { name: 'home' }
 
-  const db = getFirestore()
-  const userDoc = await getDoc(doc(collection(db, 'users'), user.uid))
-  const data = userDoc.data()
-
-  if (!data || !Array.isArray(to.meta.roles) || !to.meta.roles.includes(data.role))
+  if (!Array.isArray(to.meta.roles) || !to.meta.roles.includes(userStore.user.role))
     return { name: 'home' }
 })
 

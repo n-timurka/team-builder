@@ -1,5 +1,6 @@
 <script lang="ts">
 import { GoogleAuthProvider } from 'firebase/auth'
+import { UserRole } from '@/types/user'
 export const googleAuthProvider = new GoogleAuthProvider()
 </script>
 
@@ -9,6 +10,7 @@ import { email, required } from '@vuelidate/validators'
 import { createUserWithEmailAndPassword, signInWithPopup } from 'firebase/auth'
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
+import { setDoc, doc } from 'firebase/firestore'
 import { useFirebaseAuth, useFirestore } from 'vuefire'
 
 const router = useRouter()
@@ -29,6 +31,7 @@ const rules = {
 }
 const v$ = useVuelidate(rules, state)
 
+const db = useFirestore()
 const auth = useFirebaseAuth()
 
 const doSubmit = async () => {
@@ -40,11 +43,18 @@ const doSubmit = async () => {
 
   isLoading.value = true
   try {
-    await createUserWithEmailAndPassword(auth, state.email, state.password)
+    const { user } = await createUserWithEmailAndPassword(auth, state.email, state.password)
+    await setDoc(doc(db, 'users', user.uid), {
+      email: state.email,
+      name: user.displayName,
+      photo: user.photoURL,
+      role: UserRole.USER,
+      createdAt: new Date(),
+    })
     router.push({ name: 'home' })
   } catch (e) {
     console.error(e)
-    error.value = e
+    error.value = String(e)
   } finally {
     isLoading.value = false
   }
@@ -53,7 +63,14 @@ const signInWithGoogle = async () => {
   if (!auth) return
 
   try {
-    await signInWithPopup(auth, googleAuthProvider)
+    const { user } = await signInWithPopup(auth, googleAuthProvider)
+    await setDoc(doc(db, 'users', user.uid), {
+      email: state.email,
+      name: user.displayName,
+      photo: user.photoURL,
+      role: UserRole.USER,
+      createdAt: new Date(),
+    })
     router.push({ name: 'home' })
   } catch (e) {
     console.error(e)
@@ -98,7 +115,7 @@ const signInWithGoogle = async () => {
               v-model="state.confirm"
               :error-messages="v$.confirm.$errors.map((e) => e.$message).join('. ')"
               label="Confirm"
-              type="confirm"
+              type="password"
               required
               @blur="v$.confirm.$touch"
               @input="v$.confirm.$touch"

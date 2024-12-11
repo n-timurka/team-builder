@@ -1,16 +1,20 @@
 <script setup lang="ts">
-import { useCollection, useCurrentUser, useFirestore } from 'vuefire'
 import TheProfileMenu from './TheProfileMenu.vue'
 import TheLoginForm from './TheLoginForm.vue'
 import TheSignUpForm from './TheSignUpForm.vue'
-import AddTeamModal from './AddTeamModal.vue'
-import { collection, limit, query, where } from 'firebase/firestore'
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useUserStore } from '@/stores/userStore'
 
-const user = useCurrentUser()
-const db = useFirestore()
-const userTeam = useCollection(
-  query(collection(db, 'teams'), where('createdBy', '==', user.value?.uid), limit(1)),
-  { once: true },
+const userStore = useUserStore()
+const { user } = storeToRefs(userStore)
+
+const links = [
+  { name: 'users', label: 'Users', role: 'admin' },
+  { name: 'teams', label: 'Teams', role: 'admin' },
+]
+const filteredLinks = computed(() =>
+  links.filter((link) => !link.role || link.role === user.value?.role),
 )
 </script>
 
@@ -25,10 +29,14 @@ const userTeam = useCollection(
         <v-spacer />
 
         <template v-if="user">
-          <v-btn :to="{ name: 'users' }" class="me-4">Users</v-btn>
-          <v-btn :to="{ name: 'teams' }" class="me-4">Teams</v-btn>
-          <v-btn v-if="userTeam.length">{{ userTeam[0].name }}</v-btn>
-          <AddTeamModal v-else />
+          <v-btn
+            v-for="link in filteredLinks"
+            :key="link.name"
+            :to="{ name: link.name }"
+            class="me-4"
+          >
+            {{ link.label }}
+          </v-btn>
           <TheProfileMenu class="ms-4" />
         </template>
         <template v-else>
