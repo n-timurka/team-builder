@@ -1,9 +1,22 @@
 <script setup lang="ts">
 import { useCollection, useFirestore } from 'vuefire'
-import { collection } from 'firebase/firestore'
+import { collection, deleteDoc, doc } from 'firebase/firestore'
+import { ref } from 'vue'
 
 const db = useFirestore()
 const users = useCollection(collection(db, 'users'))
+
+const isLoading = ref(false)
+const deleteUser = async (id: string) => {
+  isLoading.value = true
+
+  try {
+    const teamDoc = doc(collection(db, 'users'), id)
+    await deleteDoc(teamDoc)
+  } finally {
+    isLoading.value = false
+  }
+}
 </script>
 
 <template>
@@ -33,8 +46,14 @@ const users = useCollection(collection(db, 'users'))
           >
         </td>
         <td>
-          <v-btn icon="mdi-pencil" size="x-small" class="me-2" />
-          <v-btn icon="mdi-delete" color="error" size="x-small" />
+          <v-btn icon="mdi-pencil" size="x-small" class="me-2" :loading="isLoading" />
+          <v-btn
+            icon="mdi-delete"
+            color="error"
+            size="x-small"
+            :loading="isLoading"
+            @click="deleteUser"
+          />
         </td>
       </tr>
     </tbody>

@@ -28,6 +28,7 @@ export const useUserStore = defineStore('userStore', () => {
 
         if (userDoc.exists()) {
           user.value = { id: authUser.uid, ...userDoc.data() } as User
+          await fetchTeam()
         }
       } else {
         user.value = null
@@ -42,7 +43,9 @@ export const useUserStore = defineStore('userStore', () => {
     const q = query(teamsCollection, where('createdBy', '==', user.value.id), limit(1))
     const teamDoc = await getDocs(q)
 
-    team.value = !teamDoc.empty ? (teamDoc.docs[0].data() as Team) : null
+    team.value = !teamDoc.empty
+      ? ({ id: teamDoc.docs[0].id, ...teamDoc.docs[0].data() } as Team)
+      : null
   }
 
   return {

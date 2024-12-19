@@ -30,20 +30,29 @@ const handleSignOut = async () => {
     </template>
 
     <v-list>
-      <v-list-item v-if="userStore.team">
+      <v-list-item
+        v-if="userStore.team"
+        subtitle="Your Team"
+        prepend-avatar="https://cdn.vuetifyjs.com/images/john.png"
+      >
         {{ userStore.team.name }}
+        <template v-slot:append>
+          <v-btn
+            icon="mdi-pencil"
+            size="small"
+            variant="text"
+            :to="{ name: 'team-edit', params: { id: userStore.team.id } }"
+          />
+        </template>
       </v-list-item>
       <v-list-item v-else>
         <AddTeamModal />
       </v-list-item>
       <v-divider />
-      <v-list-item>
-        <template v-slot:prepend>
-          <v-icon icon="mdi-account" />
-        </template>
+      <v-list-item prepend-icon="mdi-account">
         <v-list-item-title>Account</v-list-item-title>
       </v-list-item>
-      <v-list-item @click="handleSignOut">
+      <v-list-item prepend-icon="mdi-account" @click="handleSignOut">
         <v-list-item-title>Sign Out</v-list-item-title>
       </v-list-item>
     </v-list>

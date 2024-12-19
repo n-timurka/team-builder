@@ -20,7 +20,16 @@ const router = createRouter({
       path: '/teams',
       name: 'teams',
       component: () => import('@/views/TeamsView.vue'),
-      meta: { roles: ['admin', 'user'] },
+    },
+    {
+      path: '/teams/:id',
+      name: 'team-edit',
+      component: () => import('@/views/TeamEditView.vue'),
+    },
+    {
+      path: '/:id',
+      name: 'team',
+      component: () => import('@/views/TeamView.vue'),
     },
   ],
 })

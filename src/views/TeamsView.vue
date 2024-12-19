@@ -1,34 +1,77 @@
 <script setup lang="ts">
-import { useCollection, useFirestore } from 'vuefire'
-import { collection } from 'firebase/firestore'
-import { type Team } from '@/types/team'
+import type { User } from '@/types/user'
+import { collection, deleteDoc, doc } from 'firebase/firestore'
+import { computed, ref } from 'vue'
+import { useFirestore, useCollection } from 'vuefire'
 
 const db = useFirestore()
-const teams = useCollection<Team>(collection(db, 'teams'))
+const { data: teams, pending } = useCollection(collection(db, 'teams'))
+const { data: users } = useCollection(collection(db, 'users'))
+
+const usersData = computed<User[]>(() =>
+  users.value.map((user) => ({
+    ...user,
+    id: user.id,
+  })),
+)
+const teamsData = computed(() => {
+  if (!teams.value) return []
+
+  return teams.value.map((team) => ({
+    ...team,
+    id: team.id,
+    user: usersData.value.find((user) => user.id === team.createdBy),
+  }))
+})
+
+const isLoading = ref(false)
+const deleteTeam = async (id: string) => {
+  isLoading.value = true
+
+  try {
+    const teamDoc = doc(collection(db, 'teams'), id)
+    await deleteDoc(teamDoc)
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const headers = [
+  { key: 'name', title: 'Team' },
+  { key: 'status', title: 'Status', width: '150px' },
+  { key: 'user', title: 'Creator', width: '200px' },
+  { key: 'id', width: '120px' },
+]
 </script>
 
 <template>
-  <v-table>
-    <thead>
-      <tr>
-        <th class="text-left">Name</th>
-        <th class="text-left">Status</th>
-        <th class="text-left">Created By</th>
-        <th class="text-left">Created At</th>
-        <th>&nbsp;</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr v-for="team in teams" :key="team.id">
-        <td>{{ team.name }}</td>
-        <td>{{ team.status }}</td>
-        <td>{{ team.createdBy }}</td>
-        <td>{{ team.createdAt?.toDate().toLocaleDateString() }}</td>
-        <td class="text-right">
-          <v-btn icon="mdi-pencil" size="x-small" class="me-2" />
-          <v-btn icon="mdi-delete" color="error" size="x-small" />
-        </td>
-      </tr>
-    </tbody>
-  </v-table>
+  <section>
+    <div v-if="pending">Loading...</div>
+    <div v-else-if="teams.length">
+      <v-data-table :items="teamsData" :headers="headers">
+        <template #item.status="{ item }">
+          <v-chip size="small">{{ item.status }}</v-chip>
+        </template>
+        <template #item.user="{ item }">
+          {{ item.user?.name || '&ndash;' }}
+        </template>
+        <template #item.id="{ item }">
+          <v-btn
+            size="x-small"
+            icon="mdi-pencil"
+            class="me-2"
+            :loading="isLoading"
+            :to="{ name: 'team-edit', params: { id: item.id } }"
+          />
+          <v-btn
+            color="error"
+            size="x-small"
+            icon="mdi-delete"
+            :loading="isLoading"
+            @click="deleteTeam(item.id)"
+          />
+        </template>
+      </v-data-table>
+    </div>
+  </section>
 </template>
