@@ -12,6 +12,7 @@ const { user } = storeToRefs(userStore)
 const links = [
   { name: 'users', label: 'Users', role: 'admin' },
   { name: 'teams', label: 'Teams', role: 'admin' },
+  { name: 'players', label: 'Players', role: 'admin' },
 ]
 const filteredLinks = computed(() =>
   links.filter((link) => !link.role || link.role === user.value?.role),

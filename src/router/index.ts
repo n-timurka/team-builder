@@ -17,9 +17,16 @@ const router = createRouter({
       meta: { roles: ['admin'] },
     },
     {
+      path: '/players',
+      name: 'players',
+      component: () => import('@/views/PlayersView.vue'),
+      meta: { roles: ['admin'] },
+    },
+    {
       path: '/teams',
       name: 'teams',
       component: () => import('@/views/TeamsView.vue'),
+      meta: { roles: ['admin'] },
     },
     {
       path: '/teams/:id',

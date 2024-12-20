@@ -1,27 +1,20 @@
 <script setup lang="ts">
-import type { User } from '@/types/user'
+import type { Team } from '@/types/team'
 import { collection, deleteDoc, doc } from 'firebase/firestore'
 import { computed, ref } from 'vue'
 import { useFirestore, useCollection } from 'vuefire'
 
 const db = useFirestore()
 const { data: teams, pending } = useCollection(collection(db, 'teams'))
-const { data: users } = useCollection(collection(db, 'users'))
 
-const usersData = computed<User[]>(() =>
-  users.value.map((user) => ({
-    ...user,
-    id: user.id,
-  })),
-)
 const teamsData = computed(() => {
   if (!teams.value) return []
 
   return teams.value.map((team) => ({
     ...team,
     id: team.id,
-    user: usersData.value.find((user) => user.id === team.createdBy),
-  }))
+    createdBy: team.createdBy,
+  })) as Team[]
 })
 
 const isLoading = ref(false)
@@ -39,7 +32,7 @@ const deleteTeam = async (id: string) => {
 const headers = [
   { key: 'name', title: 'Team' },
   { key: 'status', title: 'Status', width: '150px' },
-  { key: 'user', title: 'Creator', width: '200px' },
+  { key: 'createdBy', title: 'Creator', width: '200px' },
   { key: 'id', width: '120px' },
 ]
 </script>
@@ -52,8 +45,8 @@ const headers = [
         <template #item.status="{ item }">
           <v-chip size="small">{{ item.status }}</v-chip>
         </template>
-        <template #item.user="{ item }">
-          {{ item.user?.name || '&ndash;' }}
+        <template #item.createdBy="{ item }">
+          {{ item.createdBy?.name || '&ndash;' }}
         </template>
         <template #item.id="{ item }">
           <v-btn

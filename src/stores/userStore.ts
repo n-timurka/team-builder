@@ -10,6 +10,7 @@ import {
   where,
   getDocs,
   limit,
+  DocumentReference,
 } from 'firebase/firestore'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
@@ -24,11 +25,12 @@ export const useUserStore = defineStore('userStore', () => {
     const auth = getAuth()
     onAuthStateChanged(auth, async (authUser) => {
       if (authUser) {
-        const userDoc = await getDoc(doc(db, 'users', authUser.uid))
+        const userRef = doc(db, 'users', authUser.uid)
+        const userDoc = await getDoc(userRef)
 
         if (userDoc.exists()) {
           user.value = { id: authUser.uid, ...userDoc.data() } as User
-          await fetchTeam()
+          await fetchTeam(userRef)
         }
       } else {
         user.value = null
@@ -36,11 +38,11 @@ export const useUserStore = defineStore('userStore', () => {
     })
   }
 
-  const fetchTeam = async () => {
+  const fetchTeam = async (userDoc: DocumentReference) => {
     if (!user.value) return
 
     const teamsCollection = collection(db, 'teams')
-    const q = query(teamsCollection, where('createdBy', '==', user.value.id), limit(1))
+    const q = query(teamsCollection, where('createdBy', '==', userDoc), limit(1))
     const teamDoc = await getDocs(q)
 
     team.value = !teamDoc.empty

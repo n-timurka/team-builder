@@ -12,7 +12,7 @@ const db = useFirestore()
 
 const userStore = useUserStore()
 
-const teamSource = computed(() => doc(collection(db, 'teams'), route.params.id))
+const teamSource = computed(() => doc(collection(db, 'teams'), String(route.params.id)))
 const { data: team, pending } = useDocument<Team>(teamSource)
 
 const canEdit = computed(
