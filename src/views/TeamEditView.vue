@@ -1,13 +1,21 @@
 <script setup lang="ts">
-import { useCollection, useDocument, useFirestore } from 'vuefire'
+import {
+  useCollection,
+  useDocument,
+  useFirebaseStorage,
+  useFirestore,
+  useStorageFileUrl,
+} from 'vuefire'
 import { collection, doc, query, Timestamp, updateDoc, where } from 'firebase/firestore'
-import { computed, ref, watch, watchEffect } from 'vue'
+import { computed, reactive, ref, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { TeamStatus, type Team } from '@/types/team'
 import { useUserStore } from '@/stores/userStore'
 import { UserRole } from '@/types/user'
 import { storeToRefs } from 'pinia'
 import { PlayerPosition, type Player } from '@/types/player'
+import AddPlayerModal from '@/components/AddPlayerModal.vue'
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
 
 const route = useRoute()
 const db = useFirestore()
@@ -43,14 +51,31 @@ const removePlayerFromTeam = (player: Player) => {
   team.value?.roster?.splice(team.value?.roster?.indexOf(player), 1)
 }
 
+const logo = ref<File | null>(null)
+const storage = useFirebaseStorage()
+const logoUrl = computed(() => `players/${team.value?.id}`)
+// Handle file upload
+const uploadLogo = async () => {
+  if (!logo.value) return
+
+  try {
+    await uploadBytes(storageRef(storage, logoUrl.value), logo.value)
+  } catch (error) {
+    console.error('Error uploading file:', error)
+    throw error
+  }
+}
+
 const isSaving = ref(false)
 const updateTeam = async () => {
   isSaving.value = true
   try {
+    await uploadLogo()
     await updateDoc(teamSource.value, {
       ...team.value,
-      roster: team.value?.roster?.map(({ id }) => doc(collection(db, 'players'), id)),
-      createdBy: doc(collection(db, 'users'), team.value?.createdBy.id),
+      logo: logo.value ? logoUrl.value : null,
+      roster: team.value?.roster?.map(({ id }) => doc(collection(db, 'teams'), id)),
+      // createdBy: doc(collection(db, 'users'), team.value?.createdBy.id),
       updatedAt: Timestamp.fromDate(new Date()),
     })
   } finally {
@@ -83,13 +108,13 @@ const squadData = computed(() => {
         ...item.players.map((player) => ({
           title: player.name,
           subtitle: `#${player.number}`,
-          prependAvatar: player.photo || 'mdi-account-circle',
+          photo: player.photo,
         })),
       )
 
       return result
     },
-    [] as Record<string, string>[],
+    [] as Record<string, string | undefined>[],
   )
 })
 
@@ -102,12 +127,14 @@ const debounceSearch = (input: string, delay = 500) => {
     clearTimeout(debounceTimeout.value)
   }
   debounceTimeout.value = setTimeout(() => {
-    searchTerm.value = input.trim().toLowerCase()
+    searchTerm.value = input ? input.trim().toLowerCase() : ''
   }, delay)
 }
 watch(
   () => searchInput.value,
-  (value) => debounceSearch(value),
+  (value) => {
+    if (value) debounceSearch(value)
+  },
 )
 const usersQuery = computed(() => {
   if (searchTerm.value) {
@@ -165,6 +192,7 @@ const { data: players, pending: playersPending } = useCollection<Player>(usersQu
                 clearable
                 clear-icon="mdi-close"
                 placeholder="Start typing to search players..."
+                @click:clear="searchTerm = ''"
               />
               <v-progress-circular v-if="playersPending" indeterminate />
               <v-data-iterator v-else-if="players.length > 0" :items="players">
@@ -188,14 +216,17 @@ const { data: players, pending: playersPending } = useCollection<Player>(usersQu
               </v-data-iterator>
               <v-alert v-else text="Nothing was found..." />
               <div class="d-flex justify-center mt-4">
-                <v-btn size="small" prepend-icon="mdi-plus" text="Create New Player" />
+                <AddPlayerModal @created="addPlayerToTeam" />
               </div>
             </v-col>
 
             <v-col md="6">
               <v-list class="cols-6" :items="squadData" item-props>
+                <template #prepend="{ item }">
+                  <v-avatar :image="item.photo" icon="mdi-account-circle" />
+                </template>
                 <template #append="{ item }">
-                  <v-btn v-show="false" icon="mdi-pencil" variant="text" size="small" />
+                  <v-btn icon="mdi-pencil" variant="text" size="small" />
                   <v-btn
                     color="error"
                     icon="mdi-delete"
@@ -225,7 +256,12 @@ const { data: players, pending: playersPending } = useCollection<Player>(usersQu
             </v-list-item>
             <v-list-item>
               <v-list-item-subtitle>Logo</v-list-item-subtitle>
-              <v-file-input prepend-icon="" prepend-inner-icon="mdi-file" />
+              <v-file-input
+                v-model="logo"
+                prepend-icon=""
+                prepend-inner-icon="mdi-file"
+                accept="image/*"
+              />
             </v-list-item>
           </v-list>
         </v-card>

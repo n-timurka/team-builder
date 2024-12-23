@@ -22,10 +22,11 @@ const rules = {
 const v$ = useVuelidate(rules, state)
 
 const doSubmit = async () => {
-  error.value = null
-  isLoading.value = true
   const isFormCorrect = await v$.value.$validate()
   if (!isFormCorrect) return
+
+  error.value = null
+  isLoading.value = true
 
   try {
     await addDoc(collection(db, 'teams'), {
@@ -36,7 +37,7 @@ const doSubmit = async () => {
     })
   } catch (e) {
     console.error(e)
-    error.value = e
+    error.value = String(e)
   } finally {
     isLoading.value = false
   }

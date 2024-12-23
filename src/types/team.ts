@@ -12,6 +12,7 @@ export type Team = {
   id: string
   name: string
   status: TeamStatus
+  logo?: string
   createdBy: User
   createdAt: Timestamp
   roster?: Player[]

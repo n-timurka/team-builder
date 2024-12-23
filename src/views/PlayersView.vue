@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import AddPlayerModal from '@/components/AddPlayerModal.vue'
 import { type Player } from '@/types/player'
 import { collection } from 'firebase/firestore'
 import { computed, ref } from 'vue'
@@ -36,6 +37,15 @@ const deletePlayer = async (id: string) => {
 
 <template>
   <section>
+    <v-row>
+      <v-col>
+        <h1>Players</h1>
+      </v-col>
+      <v-spacer />
+      <v-col cols="2" class="text-end">
+        <AddPlayerModal />
+      </v-col>
+    </v-row>
     <div v-if="pending">Loading...</div>
     <div v-else-if="players.length">
       <v-data-table :items="playersData" :headers="headers">
