@@ -3,20 +3,29 @@ import TheProfileMenu from './TheProfileMenu.vue'
 import TheLoginForm from './TheLoginForm.vue'
 import TheSignUpForm from './TheSignUpForm.vue'
 import { computed } from 'vue'
-import { storeToRefs } from 'pinia'
-import { useUserStore } from '@/stores/userStore'
+import { useAuth } from '@/composables/useAuth'
+import { Permissions } from '@/types/user'
 
-const userStore = useUserStore()
-const { user } = storeToRefs(userStore)
+const { user, teams, can } = useAuth()
 
-const links = [
-  { name: 'users', label: 'Users', role: 'admin' },
-  { name: 'teams', label: 'Teams', role: 'admin' },
-  { name: 'players', label: 'Players', role: 'admin' },
-]
-const filteredLinks = computed(() =>
-  links.filter((link) => !link.role || link.role === user.value?.role),
-)
+const links = computed(() => [
+  {
+    name: 'users',
+    label: 'Users',
+    visible: can(Permissions.USER_VIEW),
+  },
+  {
+    name: 'teams',
+    label: 'Teams',
+    visible: can(Permissions.TEAM_VIEW),
+  },
+  {
+    name: 'players',
+    label: 'Players',
+    visible: can(Permissions.PLAYER_VIEW),
+  },
+])
+const visibleLinks = computed(() => links.value.filter((link) => link.visible))
 </script>
 
 <template>
@@ -31,14 +40,14 @@ const filteredLinks = computed(() =>
 
         <template v-if="user">
           <v-btn
-            v-for="link in filteredLinks"
+            v-for="link in visibleLinks"
             :key="link.name"
             :to="{ name: link.name }"
             class="me-4"
           >
             {{ link.label }}
           </v-btn>
-          <TheProfileMenu class="ms-4" />
+          <TheProfileMenu :user="user" :teams="teams" class="ms-4" />
         </template>
         <template v-else>
           <TheLoginForm />

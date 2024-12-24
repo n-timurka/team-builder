@@ -1,7 +1,7 @@
 <script lang="ts" setup>
-import { useUserStore } from '@/stores/userStore'
+import { useAuth } from '@/composables/useAuth'
 import type { Team } from '@/types/team'
-import { UserRole } from '@/types/user'
+import { Permissions } from '@/types/user'
 import { doc, collection } from 'firebase/firestore'
 import { ref as storageRef } from 'firebase/storage'
 import { computed } from 'vue'
@@ -10,14 +10,13 @@ import { useDocument, useFirebaseStorage, useFirestore, useStorageFileUrl } from
 
 const route = useRoute()
 const db = useFirestore()
-
-const userStore = useUserStore()
+const { user, can } = useAuth()
 
 const teamSource = computed(() => doc(collection(db, 'teams'), String(route.params.id)))
 const { data: team, pending } = useDocument<Team>(teamSource)
 
 const canEdit = computed(
-  () => userStore.user?.role === UserRole.ADMIN || userStore.user?.id === team.value?.createdBy,
+  () => can(Permissions.TEAM_UPDATE) || user.value?.id === team.value?.createdBy.id,
 )
 
 const storage = useFirebaseStorage()
@@ -36,16 +35,48 @@ const { url } = useStorageFileUrl(logoFileRef)
           <h1>{{ team.name }}</h1>
         </v-col>
         <v-spacer />
-        <v-col>
-          <v-btn v-if="canEdit" :to="{ name: 'team-edit', params: { id: team.id } }">Edit</v-btn>
+        <v-col class="text-end">
+          <v-btn v-if="canEdit" size="small" :to="{ name: 'team-edit', params: { id: team.id } }"
+            >Edit</v-btn
+          >
         </v-col>
       </v-row>
       <v-row>
-        <v-col cols="2">
-          <v-img v-if="team.logo" :width="300" aspect-ratio="1/1" cover :src="url" />
+        <v-col cols="3">
+          <v-img
+            v-if="url"
+            :width="300"
+            aspect-ratio="1/1"
+            cover
+            :src="url"
+            class="bg-grey-lighten-2"
+          />
+        </v-col>
+        <v-col>
+          <h2>Squad</h2>
+          <v-table>
+            <thead>
+              <tr>
+                <th class="text-left w-10">#</th>
+                <th class="text-left">Name</th>
+                <th class="text-left">Position</th>
+                <th class="text-left">Birthdate</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr v-for="player in team.roster" :key="player.id">
+                <td>{{ player.number }}</td>
+                <td>
+                  <v-avatar :src="player.photo" icon="mdi-account" />
+                  {{ player.name }}
+                </td>
+                <td>{{ player.position }}</td>
+                <td>{{ player.birthDate }}</td>
+              </tr>
+            </tbody>
+          </v-table>
         </v-col>
       </v-row>
-      {{ team }}
     </div>
     <v-empty-state
       v-else

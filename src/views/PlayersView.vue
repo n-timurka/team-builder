@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import AddPlayerModal from '@/components/AddPlayerModal.vue'
+import PlayersListItem from '@/components/PlayersListItem.vue'
+import { useAuth } from '@/composables/useAuth'
 import { type Player } from '@/types/player'
+import { Permissions } from '@/types/user'
 import { collection } from 'firebase/firestore'
-import { computed, ref } from 'vue'
+import { computed } from 'vue'
 import { useCollection, useFirestore } from 'vuefire'
 
+const { can } = useAuth()
 const db = useFirestore()
 const { data: players, pending } = useCollection<Player[]>(collection(db, 'players'))
 
@@ -16,23 +20,6 @@ const playersData = computed(() => {
     id: player.id,
   }))
 })
-const headers = [
-  { key: 'name', title: 'Team' },
-  { key: 'number', title: 'Number', width: '150px' },
-  { key: 'position', title: 'Position', width: '200px' },
-  { key: 'team', title: 'Team', width: '200px' },
-  { key: 'id', width: '120px' },
-]
-const positions = {
-  g: 'Guard',
-  f: 'Forward',
-  c: 'Center',
-}
-
-const isLoading = ref(false)
-const deletePlayer = async (id: string) => {
-  console.log(id)
-}
 </script>
 
 <template>
@@ -43,35 +30,22 @@ const deletePlayer = async (id: string) => {
       </v-col>
       <v-spacer />
       <v-col cols="2" class="text-end">
-        <AddPlayerModal />
+        <AddPlayerModal v-if="can(Permissions.PLAYER_CREATE)" />
       </v-col>
     </v-row>
     <div v-if="pending">Loading...</div>
-    <div v-else-if="players.length">
-      <v-data-table :items="playersData" :headers="headers">
-        <template #item.position="{ item }">
-          {{ item.position ? positions[item.position] : '&ndash;' }}
-        </template>
-        <template #item.team="{ item }">
-          {{ item.team?.name || '&ndash;' }}
-        </template>
-        <template #item.id="{ item }">
-          <v-btn
-            size="x-small"
-            icon="mdi-pencil"
-            class="me-2"
-            :loading="isLoading"
-            :to="{ name: 'team-edit', params: { id: item.id } }"
-          />
-          <v-btn
-            color="error"
-            size="x-small"
-            icon="mdi-delete"
-            :loading="isLoading"
-            @click="deletePlayer(item.id)"
-          />
-        </template>
-      </v-data-table>
-    </div>
+    <v-table v-else-if="players.length">
+      <thead>
+        <tr>
+          <th class="text-left">Name</th>
+          <th class="text-left">Position</th>
+          <th class="text-left">Team</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <PlayersListItem v-for="player in playersData" :key="player.id" :player="player" />
+      </tbody>
+    </v-table>
   </section>
 </template>

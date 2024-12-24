@@ -1,43 +1,27 @@
 <script setup lang="ts">
-import {
-  useCollection,
-  useDocument,
-  useFirebaseStorage,
-  useFirestore,
-  useStorageFileUrl,
-} from 'vuefire'
+import { useCollection, useDocument, useFirebaseStorage, useFirestore } from 'vuefire'
 import { collection, doc, query, Timestamp, updateDoc, where } from 'firebase/firestore'
-import { computed, reactive, ref, watch, watchEffect } from 'vue'
+import { computed, ref, watch, watchEffect } from 'vue'
 import { useRoute } from 'vue-router'
 import { TeamStatus, type Team } from '@/types/team'
-import { useUserStore } from '@/stores/userStore'
-import { UserRole } from '@/types/user'
-import { storeToRefs } from 'pinia'
+import { Permissions, UserRole } from '@/types/user'
 import { PlayerPosition, type Player } from '@/types/player'
 import AddPlayerModal from '@/components/AddPlayerModal.vue'
-import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { ref as storageRef, uploadBytes } from 'firebase/storage'
+import { useAuth } from '@/composables/useAuth'
 
 const route = useRoute()
 const db = useFirestore()
-const userStore = useUserStore()
-const { user } = storeToRefs(userStore)
+const { user, can } = useAuth()
 
 const teamSource = computed(() => doc(collection(db, 'teams'), String(route.params.id)))
 const { data: team, pending } = useDocument<Team>(teamSource)
-const author = computed(() => {
-  if (!team.value) return
-
-  return {
-    ...team.value.createdBy,
-    id: team.value.createdBy.id,
-  }
-})
 
 const error = ref(false)
 watchEffect(() => {
   if (!user.value || !team.value) return
 
-  if (user.value?.role !== UserRole.ADMIN && author.value?.id !== user.value?.id) {
+  if (!can(Permissions.TEAM_UPDATE) && user.value?.id !== team.value?.createdBy.id) {
     error.value = true
   } else {
     error.value = false
@@ -53,7 +37,7 @@ const removePlayerFromTeam = (player: Player) => {
 
 const logo = ref<File | null>(null)
 const storage = useFirebaseStorage()
-const logoUrl = computed(() => `players/${team.value?.id}`)
+const logoUrl = computed(() => `teams/${team.value?.id}`)
 // Handle file upload
 const uploadLogo = async () => {
   if (!logo.value) return
@@ -75,7 +59,6 @@ const updateTeam = async () => {
       ...team.value,
       logo: logo.value ? logoUrl.value : null,
       roster: team.value?.roster?.map(({ id }) => doc(collection(db, 'teams'), id)),
-      // createdBy: doc(collection(db, 'users'), team.value?.createdBy.id),
       updatedAt: Timestamp.fromDate(new Date()),
     })
   } finally {

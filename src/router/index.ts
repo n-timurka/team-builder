@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import HomeView from '@/views/HomeView.vue'
-import { useUserStore } from '@/stores/userStore'
+import { useAuth } from '@/composables/useAuth'
+import { Permissions } from '@/types/user'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -20,18 +21,19 @@ const router = createRouter({
       path: '/players',
       name: 'players',
       component: () => import('@/views/PlayersView.vue'),
-      meta: { roles: ['admin'] },
+      meta: { permission: Permissions.PLAYER_VIEW },
     },
     {
       path: '/teams',
       name: 'teams',
       component: () => import('@/views/TeamsView.vue'),
-      meta: { roles: ['admin'] },
+      meta: { permission: Permissions.TEAM_VIEW },
     },
     {
       path: '/teams/:id',
       name: 'team-edit',
       component: () => import('@/views/TeamEditView.vue'),
+      meta: { permission: Permissions.TEAM_UPDATE },
     },
     {
       path: '/:id',
@@ -42,15 +44,12 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
-  const userStore = useUserStore()
-  await userStore.fetchUser()
+  const { can, FetchUserData } = useAuth()
+  await FetchUserData()
 
-  if (!to.meta.roles) return
+  if (!to.meta.permission) return
 
-  if (!userStore.user) return { name: 'home' }
-
-  if (!Array.isArray(to.meta.roles) || !to.meta.roles.includes(userStore.user.role))
-    return { name: 'home' }
+  if (!can(to.meta.permission as Permissions)) return { name: 'home' }
 })
 
 export default router

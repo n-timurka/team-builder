@@ -7,7 +7,7 @@ defineEmits(['created'])
 <template>
   <v-dialog max-width="600">
     <template v-slot:activator="{ props: activatorProps }">
-      <v-btn v-bind="activatorProps" text="New Player" prepend-icon="mdi-plus" variant="tonal" />
+      <v-btn v-bind="activatorProps" text="Create" prepend-icon="mdi-plus" variant="tonal" />
     </template>
 
     <template v-slot:default="{ isActive }">

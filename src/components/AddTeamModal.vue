@@ -5,7 +5,13 @@ import AddTeamForm from './AddTeamForm.vue'
 <template>
   <v-dialog max-width="500">
     <template v-slot:activator="{ props: activatorProps }">
-      <v-btn v-bind="activatorProps" text="Create Team" prepend-icon="mdi-plus" variant="tonal" />
+      <v-btn
+        v-bind="activatorProps"
+        text="Create"
+        prepend-icon="mdi-plus"
+        variant="tonal"
+        size="small"
+      />
     </template>
 
     <template v-slot:default="{ isActive }">
