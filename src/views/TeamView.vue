@@ -36,9 +36,12 @@ const { url } = useStorageFileUrl(logoFileRef)
         </v-col>
         <v-spacer />
         <v-col class="text-end">
-          <v-btn v-if="canEdit" size="small" :to="{ name: 'team-edit', params: { id: team.id } }"
-            >Edit</v-btn
-          >
+          <v-btn
+            v-if="canEdit"
+            text="Edit"
+            size="small"
+            :to="{ name: 'team-edit', params: { id: team.id } }"
+          />
         </v-col>
       </v-row>
       <v-row>

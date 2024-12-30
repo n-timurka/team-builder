@@ -3,6 +3,8 @@ import { useRouter } from 'vue-router'
 import { useFirebaseAuth } from 'vuefire'
 import { signOut } from 'firebase/auth'
 import AddTeamModal from './AddTeamModal.vue'
+import type { User } from '@/types/user'
+import type { Team } from '@/types/team'
 
 defineProps<{
   user: User

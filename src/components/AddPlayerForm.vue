@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { PlayerPosition } from '@/types/player'
-import useVuelidate from '@vuelidate/core'
+import useVuelidate, { type ErrorObject } from '@vuelidate/core'
 import { required } from '@vuelidate/validators'
 import { addDoc, collection, Timestamp } from 'firebase/firestore'
 import { ref, reactive } from 'vue'
@@ -14,7 +14,14 @@ const user = useCurrentUser()
 
 const error = ref<string | null>(null)
 const isLoading = ref(false)
-const initialState = {
+type AddPlayerModel = {
+  name: string
+  position?: PlayerPosition
+  number: string
+  birthDate?: string
+  photo?: File
+}
+const initialState: AddPlayerModel = {
   name: '',
   position: undefined,
   number: '',
@@ -30,11 +37,11 @@ const rules = {
   position: { required },
   birthDate: { required },
 }
-const v$ = useVuelidate(rules, state)
+const v$ = useVuelidate<AddPlayerModel>(rules, state)
 
 const storage = useFirebaseStorage()
 const mountainFileRef = storageRef(storage, `players/${state.name}`)
-const { url, uploadError, upload } = useStorageFile(mountainFileRef)
+const { url, upload } = useStorageFile(mountainFileRef)
 
 const doSubmit = async () => {
   const isFormCorrect = await v$.value.$validate()
@@ -46,15 +53,11 @@ const doSubmit = async () => {
   try {
     if (state.photo) {
       await upload(state.photo)
-      if (!url.value) {
-        delete state.photo
-      } else {
-        state.photo = url.value
-      }
     }
 
     const player = await addDoc(collection(db, 'players'), {
       ...Object.fromEntries(Object.entries(state).filter(([_, v]) => v != null)),
+      photo: url.value,
       fullName: state.name.toLocaleLowerCase().split(' '),
       createdAt: Timestamp.fromDate(new Date()),
       createdBy: user.value?.uid,
@@ -73,7 +76,7 @@ const doSubmit = async () => {
   <v-form @submit.prevent="doSubmit">
     <v-text-field
       v-model="state.name"
-      :error-messages="v$.name.$errors.map((e) => e.$message).join('. ')"
+      :error-messages="v$.name.$errors.map((e: ErrorObject) => e.$message).join('. ')"
       required
       label="Name"
       @blur="v$.name.$touch"
@@ -84,7 +87,7 @@ const doSubmit = async () => {
       <v-col>
         <v-text-field
           v-model="state.number"
-          :error-messages="v$.number.$errors.map((e) => e.$message).join('. ')"
+          :error-messages="v$.number.$errors.map((e: ErrorObject) => e.$message).join('. ')"
           required
           label="Number"
           @blur="v$.number.$touch"
@@ -96,7 +99,7 @@ const doSubmit = async () => {
         <v-select
           v-model="state.position"
           :items="Object.values(PlayerPosition)"
-          :error-messages="v$.position.$errors.map((e) => e.$message).join('. ')"
+          :error-messages="v$.position.$errors.map((e: ErrorObject) => e.$message).join('. ')"
           required
           label="Position"
         />
@@ -105,7 +108,7 @@ const doSubmit = async () => {
 
     <v-text-field
       v-model="state.birthDate"
-      :error-messages="v$.birthDate.$errors.map((e) => e.$message).join('. ')"
+      :error-messages="v$.birthDate.$errors.map((e: ErrorObject) => e.$message).join('. ')"
       required
       label="Date of Birth"
       @blur="v$.birthDate.$touch"
@@ -121,9 +124,11 @@ const doSubmit = async () => {
     />
 
     <v-row>
-      <v-col><v-btn text="Reset" /></v-col>
+      <v-col>
+        <v-btn text="Reset" />
+      </v-col>
       <v-col class="text-end">
-        <v-btn type="submit" color="indigo-darken-3" :loading="isLoading"> Create </v-btn>
+        <v-btn text="Create" type="submit" color="indigo-darken-3" :loading="isLoading" />
       </v-col>
     </v-row>
 

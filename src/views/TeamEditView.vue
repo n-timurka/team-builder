@@ -31,8 +31,10 @@ watchEffect(() => {
 const addPlayerToTeam = (player: Player) => {
   team.value?.roster?.push(player)
 }
-const removePlayerFromTeam = (player: Player) => {
-  team.value?.roster?.splice(team.value?.roster?.indexOf(player), 1)
+const removePlayerFromTeam = (id?: string) => {
+  if (!id || !team.value) return
+
+  team.value.roster = team.value.roster?.filter((player) => player.id !== id)
 }
 
 const logo = ref<File | null>(null)
@@ -89,6 +91,7 @@ const squadData = computed(() => {
       result.push(
         { type: 'subheader', title: item.title },
         ...item.players.map((player) => ({
+          id: player.id,
           title: player.name,
           subtitle: `#${player.number}`,
           photo: player.photo,
@@ -215,7 +218,7 @@ const { data: players, pending: playersPending } = useCollection<Player>(usersQu
                     icon="mdi-delete"
                     variant="text"
                     size="small"
-                    @click="removePlayerFromTeam(item)"
+                    @click="removePlayerFromTeam(item.id)"
                   />
                 </template>
               </v-list>

@@ -12,6 +12,7 @@ export type Player = {
   fullName: string[]
   number: string
   photo?: string
+  birthDate?: string
   position: PlayerPosition
   team?: Team
 }

@@ -1,25 +1,26 @@
 <script setup lang="ts">
 import AddPlayerModal from '@/components/AddPlayerModal.vue'
-import PlayersListItem from '@/components/PlayersListItem.vue'
+import AppPlayerPhoto from '@/components/AppPlayerPhoto.vue'
 import { useAuth } from '@/composables/useAuth'
 import { type Player } from '@/types/player'
+import type { Team } from '@/types/team'
 import { Permissions } from '@/types/user'
 import { collection } from 'firebase/firestore'
-import { computed } from 'vue'
 import { useCollection, useFirestore } from 'vuefire'
 
 const { can } = useAuth()
 const db = useFirestore()
-const { data: players, pending } = useCollection<Player[]>(collection(db, 'players'))
+const { data: players, pending } = useCollection<Player>(collection(db, 'players'))
 
-const playersData = computed(() => {
-  if (!players.value) return []
-
-  return players.value.map((player) => ({
-    ...player,
-    id: player.id,
-  }))
-})
+const positions = {
+  g: 'Guard',
+  f: 'Forward',
+  c: 'Center',
+}
+const teams: Team[] = []
+const deletePlayer = (id: string) => {
+  console.log(id)
+}
 </script>
 
 <template>
@@ -39,12 +40,42 @@ const playersData = computed(() => {
         <tr>
           <th class="text-left">Name</th>
           <th class="text-left">Position</th>
-          <th class="text-left">Team</th>
+          <th class="text-left">Teams</th>
           <th></th>
         </tr>
       </thead>
       <tbody>
-        <PlayersListItem v-for="player in playersData" :key="player.id" :player="player" />
+        <tr v-for="player in players" :key="player.id">
+          <td class="w-75">
+            <AppPlayerPhoto :photo="player.photo" class="me-2" />
+            {{ player.name }}
+          </td>
+          <td>{{ player.position ? positions[player.position] : '&ndash;' }}</td>
+          <td>
+            <RouterLink
+              v-for="team in teams"
+              :key="team.id"
+              :to="{ name: 'team-edit', params: { id: team.id } }"
+            >
+              {{ team.name }}
+            </RouterLink>
+          </td>
+          <td class="text-right">
+            <v-btn
+              v-if="can(Permissions.PLAYER_UPDATE)"
+              size="x-small"
+              icon="mdi-pencil"
+              class="me-2"
+            />
+            <v-btn
+              v-if="can(Permissions.PLAYER_DELETE)"
+              color="error"
+              size="x-small"
+              icon="mdi-delete"
+              @click="deletePlayer(player.id)"
+            />
+          </td>
+        </tr>
       </tbody>
     </v-table>
   </section>

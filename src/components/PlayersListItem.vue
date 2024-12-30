@@ -65,7 +65,6 @@ const deletePlayer = async (id: string) => {
         icon="mdi-pencil"
         class="me-2"
         :loading="isLoading"
-        :to="{ name: 'team-edit', params: { id: player.id } }"
       />
       <v-btn
         v-if="can(Permissions.PLAYER_DELETE)"
