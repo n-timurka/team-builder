@@ -15,7 +15,7 @@ const router = createRouter({
       path: '/users',
       name: 'users',
       component: () => import('@/views/UsersView.vue'),
-      meta: { roles: ['admin'] },
+      meta: { permission: Permissions.USER_VIEW },
     },
     {
       path: '/players',
@@ -32,8 +32,13 @@ const router = createRouter({
     {
       path: '/teams/:id',
       name: 'team-edit',
-      component: () => import('@/views/TeamEditView.vue'),
-      meta: { permission: Permissions.TEAM_UPDATE },
+      component: () => import('@/views/TeamValidateView.vue'),
+    },
+    {
+      path: '/validate/:id',
+      name: 'team-validate',
+      component: () => import('@/views/TeamValidateView.vue'),
+      meta: { permission: Permissions.TEAM_VALIDATE },
     },
     {
       path: '/:id',

@@ -10,11 +10,6 @@ const { user, teams, can } = useAuth()
 
 const links = computed(() => [
   {
-    name: 'users',
-    label: 'Users',
-    visible: can(Permissions.USER_VIEW),
-  },
-  {
     name: 'teams',
     label: 'Teams',
     visible: can(Permissions.TEAM_VIEW),
@@ -23,6 +18,11 @@ const links = computed(() => [
     name: 'players',
     label: 'Players',
     visible: can(Permissions.PLAYER_VIEW),
+  },
+  {
+    name: 'users',
+    label: 'Users',
+    visible: can(Permissions.USER_VIEW),
   },
 ])
 const visibleLinks = computed(() => links.value.filter((link) => link.visible))

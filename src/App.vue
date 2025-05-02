@@ -8,7 +8,7 @@ import TheHeader from '@/components/TheHeader.vue'
     <v-layout>
       <TheHeader />
 
-      <v-main>
+      <v-main class="bg-blue-grey-lighten-5">
         <v-container>
           <RouterView />
         </v-container>

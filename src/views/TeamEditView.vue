@@ -133,131 +133,159 @@ const { data: players, pending: playersPending } = useCollection<Player>(usersQu
 </script>
 
 <template>
-  <v-skeleton-loader v-if="pending"></v-skeleton-loader>
-  <div v-else-if="error">You don't have rights to see this page</div>
-  <v-sheet v-else-if="team">
-    <v-row>
-      <v-col cols="8">
-        <v-text-field v-model="team.name" label="Team Name" variant="solo" />
-      </v-col>
-      <v-col cols="2">
-        <v-select
-          v-model="team.status"
-          label="Status"
-          :disabled="user?.role !== UserRole.ADMIN"
-          :items="Object.values(TeamStatus)"
-          variant="solo"
-          class="w-100"
-        />
-      </v-col>
-      <v-col cols="2">
-        <v-row>
-          <v-col>
-            <v-btn class="v-col-auto" color="primary" block :loading="isSaving" @click="updateTeam">
-              Save
-            </v-btn>
-          </v-col>
-          <v-col>
-            <v-btn :to="{ name: 'team', params: { id: team.id } }" target="_blank" block>
-              Preview
-            </v-btn>
-          </v-col>
-        </v-row>
-      </v-col>
-    </v-row>
+  <v-sheet>
+    <v-progress-circular v-if="pending" indeterminate />
+    <v-alert v-else-if="error" text="You don't have permission to edit this team." color="error" />
+    <template v-else-if="team">
+      <v-row>
+        <v-col cols="9">
+          <v-text-field v-model="team.name" label="Team Name" />
 
-    <v-row>
-      <v-col md="8">
-        <v-card class="d-flex">
           <v-row>
-            <v-col md="6" class="pa-8">
-              <v-text-field
-                v-model="searchInput"
-                append-inner-icon="mdi-magnify"
-                variant="solo"
-                clearable
-                clear-icon="mdi-close"
-                placeholder="Start typing to search players..."
-                @click:clear="searchTerm = ''"
-              />
-              <v-progress-circular v-if="playersPending" indeterminate />
-              <v-data-iterator v-else-if="players.length > 0" :items="players">
-                <template v-slot:default="{ items }">
-                  <template v-for="(item, i) in items" :key="i">
-                    <v-list-item :title="item.raw.name" :subtitle="item.raw.position">
-                      <template #prepend>
-                        <v-avatar :image="item.raw?.photo" icon="mdi-account-circle" />
-                      </template>
-                      <template #append>
-                        <v-btn
-                          icon="mdi-chevron-right"
-                          size="small"
-                          variant="text"
-                          @click="addPlayerToTeam(item.raw)"
-                        />
-                      </template>
-                    </v-list-item>
-                  </template>
-                </template>
-              </v-data-iterator>
-              <v-alert v-else text="Nothing was found..." />
-              <div class="d-flex justify-center mt-4">
-                <AddPlayerModal @created="addPlayerToTeam" />
-              </div>
+            <v-col>
+              <v-card title="Team Data"> </v-card>
             </v-col>
 
-            <v-col md="6">
-              <v-list class="cols-6" :items="squadData" item-props>
-                <template #prepend="{ item }">
-                  <v-avatar :image="item.photo" icon="mdi-account-circle" />
-                </template>
-                <template #append="{ item }">
-                  <v-btn icon="mdi-pencil" variant="text" size="small" />
-                  <v-btn
-                    color="error"
-                    icon="mdi-delete"
-                    variant="text"
-                    size="small"
-                    @click="removePlayerFromTeam(item.id)"
-                  />
-                </template>
-              </v-list>
+            <v-col cols="8">
+              <v-card title="Squad"> </v-card>
             </v-col>
           </v-row>
-        </v-card>
-      </v-col>
+        </v-col>
 
-      <v-col md="4">
-        <v-card>
-          <v-list>
-            <v-list-item>
-              <v-list-item-subtitle>Created At</v-list-item-subtitle>
-              <v-list-item-title>{{
-                team.createdAt.toDate().toLocaleDateString()
-              }}</v-list-item-title>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-subtitle>Created By</v-list-item-subtitle>
-              <v-list-item-title>{{ team.createdBy?.name || '&ndash;' }}</v-list-item-title>
-            </v-list-item>
-            <v-list-item>
-              <v-list-item-subtitle>Logo</v-list-item-subtitle>
-              <v-file-input
-                v-model="logo"
-                prepend-icon=""
-                prepend-inner-icon="mdi-file"
-                accept="image/*"
-              />
-            </v-list-item>
-          </v-list>
-        </v-card>
-      </v-col>
-    </v-row>
+        <v-col>
+          <v-btn>Save</v-btn>
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col cols="8">
+          <v-text-field v-model="team.name" label="Team Name" variant="solo" />
+        </v-col>
+        <v-col cols="2">
+          <v-select
+            v-model="team.status"
+            label="Status"
+            :disabled="user?.role !== UserRole.ADMIN"
+            :items="Object.values(TeamStatus)"
+            variant="solo"
+            class="w-100"
+          />
+        </v-col>
+        <v-col cols="2">
+          <v-row>
+            <v-col>
+              <v-btn
+                class="v-col-auto"
+                color="primary"
+                block
+                :loading="isSaving"
+                @click="updateTeam"
+              >
+                Save
+              </v-btn>
+            </v-col>
+            <v-col>
+              <v-btn :to="{ name: 'team', params: { id: team.id } }" target="_blank" block>
+                Preview
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-col>
+      </v-row>
+
+      <v-row>
+        <v-col md="8">
+          <v-card class="d-flex">
+            <v-row>
+              <v-col md="6" class="pa-8">
+                <v-text-field
+                  v-model="searchInput"
+                  append-inner-icon="mdi-magnify"
+                  variant="solo"
+                  clearable
+                  clear-icon="mdi-close"
+                  placeholder="Start typing to search players..."
+                  @click:clear="searchTerm = ''"
+                />
+                <v-progress-circular v-if="playersPending" indeterminate />
+                <v-data-iterator v-else-if="players.length > 0" :items="players">
+                  <template v-slot:default="{ items }">
+                    <template v-for="(item, i) in items" :key="i">
+                      <v-list-item :title="item.raw.name" :subtitle="item.raw.position">
+                        <template #prepend>
+                          <v-avatar :image="item.raw?.photo" icon="mdi-account-circle" />
+                        </template>
+                        <template #append>
+                          <v-btn
+                            icon="mdi-chevron-right"
+                            size="small"
+                            variant="text"
+                            @click="addPlayerToTeam(item.raw)"
+                          />
+                        </template>
+                      </v-list-item>
+                    </template>
+                  </template>
+                </v-data-iterator>
+                <v-alert v-else text="Nothing was found..." />
+                <div class="d-flex justify-center mt-4">
+                  <AddPlayerModal @created="addPlayerToTeam" />
+                </div>
+              </v-col>
+
+              <v-col md="6">
+                <v-list class="cols-6" :items="squadData" item-props>
+                  <template #prepend="{ item }">
+                    <v-avatar :image="item.photo" icon="mdi-account-circle" />
+                  </template>
+                  <template #append="{ item }">
+                    <v-btn icon="mdi-pencil" variant="text" size="small" />
+                    <v-btn
+                      color="error"
+                      icon="mdi-delete"
+                      variant="text"
+                      size="small"
+                      @click="removePlayerFromTeam(item.id)"
+                    />
+                  </template>
+                </v-list>
+              </v-col>
+            </v-row>
+          </v-card>
+        </v-col>
+
+        <v-col md="4">
+          <v-card>
+            <v-list>
+              <v-list-item>
+                <v-list-item-subtitle>Created At</v-list-item-subtitle>
+                <v-list-item-title>{{
+                  team.createdAt.toDate().toLocaleDateString()
+                }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item>
+                <v-list-item-subtitle>Created By</v-list-item-subtitle>
+                <v-list-item-title>{{ team.createdBy?.name || '&ndash;' }}</v-list-item-title>
+              </v-list-item>
+              <v-list-item>
+                <v-list-item-subtitle>Logo</v-list-item-subtitle>
+                <v-file-input
+                  v-model="logo"
+                  prepend-icon=""
+                  prepend-inner-icon="mdi-file"
+                  accept="image/*"
+                />
+              </v-list-item>
+            </v-list>
+          </v-card>
+        </v-col>
+      </v-row>
+    </template>
+    <v-empty-state
+      v-else
+      icon="mdi-magnify"
+      text="Try adjusting your search terms or filters. Sometimes less specific terms or broader queries can help you find what you're looking for."
+      title="We couldn't find a match."
+    />
   </v-sheet>
-  <v-empty-state
-    v-else
-    headline="Whoops, 404"
-    title="Page not found"
-    text="The page you were looking for does not exist"
-  />
 </template>

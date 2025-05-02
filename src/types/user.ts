@@ -13,6 +13,7 @@ export enum Permissions {
   TEAM_CREATE = 'team:create',
   TEAM_UPDATE = 'team:update',
   TEAM_DELETE = 'team:delete',
+  TEAM_VALIDATE = 'team:validate',
 
   PLAYER_VIEW = 'player:view',
   PLAYER_CREATE = 'player:create',
@@ -21,17 +22,12 @@ export enum Permissions {
 }
 
 export const RolePermissions = {
-  [UserRole.USER]: [
-    Permissions.TEAM_CREATE,
-    Permissions.TEAM_UPDATE,
-    Permissions.PLAYER_CREATE,
-    Permissions.PLAYER_UPDATE,
-  ],
+  [UserRole.USER]: [Permissions.TEAM_CREATE, Permissions.PLAYER_CREATE, Permissions.PLAYER_UPDATE],
   [UserRole.EDITOR]: [
     Permissions.TEAM_VIEW,
-    Permissions.TEAM_UPDATE,
     Permissions.TEAM_CREATE,
     Permissions.PLAYER_VIEW,
+    Permissions.TEAM_VALIDATE,
   ],
   [UserRole.ADMIN]: Object.values(Permissions),
 }

@@ -6,7 +6,6 @@ import { useFirestore, useCollection } from 'vuefire'
 import { useAuth } from '@/composables/useAuth'
 import { Permissions } from '@/types/user'
 import { TeamStatus } from '@/types/team'
-import AddTeamModal from '@/components/AddTeamModal.vue'
 
 const { can } = useAuth()
 const db = useFirestore()
@@ -38,37 +37,42 @@ const headers = [
   { key: 'name', title: 'Team' },
   { key: 'status', title: 'Status', width: '150px' },
   { key: 'createdBy', title: 'Creator', width: '200px' },
-  { key: 'id', width: '120px' },
+  { key: 'id', width: '120px', sortable: false },
 ]
 
 const statusColors = {
   [TeamStatus.NEW]: 'grey',
+  [TeamStatus.PENDING]: 'orange',
   [TeamStatus.APPROVED]: 'green',
   [TeamStatus.REJECTED]: 'red',
 }
 </script>
 
 <template>
-  <section>
-    <v-row>
-      <v-col>
-        <h1>Teams</h1>
-      </v-col>
-      <v-spacer />
-      <v-col cols="2" class="text-end">
-        <AddTeamModal v-if="can(Permissions.TEAM_CREATE)" />
-      </v-col>
-    </v-row>
-    <div v-if="pending">Loading...</div>
-    <div v-else-if="teams.length">
-      <v-data-table :items="teamsData" :headers="headers">
-        <template #item.status="{ item }">
-          <v-chip size="small" :color="statusColors[item.status]">{{ item.status }}</v-chip>
-        </template>
-        <template #item.createdBy="{ item }">
-          {{ item.createdBy?.name || '&ndash;' }}
-        </template>
-        <template #item.id="{ item }">
+  <v-sheet border rounded>
+    <v-data-table :items="teamsData" :headers="headers" :loading="pending">
+      <template #top>
+        <v-toolbar title="Teams" color="transparent" />
+      </template>
+      <template v-slot:loading>
+        <v-skeleton-loader type="table-row@4" />
+      </template>
+      <template #[`item.status`]="{ item }">
+        <v-chip size="small" :color="statusColors[item.status]">{{ item.status }}</v-chip>
+      </template>
+      <template #[`item.createdBy`]="{ item }">
+        {{ item.createdBy?.name || '&ndash;' }}
+      </template>
+      <template #[`item.id`]="{ item }">
+        <div class="d-flex justify-end">
+          <v-btn
+            v-if="can(Permissions.TEAM_VALIDATE)"
+            size="x-small"
+            icon="mdi-check"
+            class="me-2"
+            :loading="isLoading"
+            :to="{ name: 'team-validate', params: { id: item.id } }"
+          />
           <v-btn
             v-if="can(Permissions.TEAM_UPDATE)"
             size="x-small"
@@ -85,8 +89,8 @@ const statusColors = {
             :loading="isLoading"
             @click="deleteTeam(item.id)"
           />
-        </template>
-      </v-data-table>
-    </div>
-  </section>
+        </div>
+      </template>
+    </v-data-table>
+  </v-sheet>
 </template>

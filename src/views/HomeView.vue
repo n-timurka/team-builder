@@ -6,16 +6,18 @@ import { useCollection, useFirestore } from 'vuefire'
 const db = useFirestore()
 
 const q = query(collection(db, 'teams'), where('status', '==', TeamStatus.APPROVED))
-const { data: teams, pending } = useCollection<Team>(q)
+const { data: teams, pending, error } = useCollection<Team>(q)
 </script>
 
 <template>
   <section>
-    <div v-if="pending">Loading...</div>
+    <v-progress-circular v-if="pending" indeterminate />
+    <v-alert v-else-if="error" :text="error.message" color="error" />
     <div v-else-if="teams.length">
       <v-row>
         <v-col cols="3" v-for="team in teams" :key="team.id">
           <v-card>
+            <v-img height="200px" src="https://cdn.vuetifyjs.com/images/cards/sunshine.jpg" cover />
             <v-card-title>{{ team.name }}</v-card-title>
             <v-card-actions>
               <v-btn :to="{ name: 'team', params: { id: team.id } }">View</v-btn>

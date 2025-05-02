@@ -1,82 +1,79 @@
 <script setup lang="ts">
-import AddPlayerModal from '@/components/AddPlayerModal.vue'
 import AppPlayerPhoto from '@/components/AppPlayerPhoto.vue'
 import { useAuth } from '@/composables/useAuth'
-import { type Player } from '@/types/player'
+import { PlayerPosition, type Player } from '@/types/player'
 import type { Team } from '@/types/team'
 import { Permissions } from '@/types/user'
 import { collection } from 'firebase/firestore'
+import { computed } from 'vue'
 import { useCollection, useFirestore } from 'vuefire'
 
 const { can } = useAuth()
 const db = useFirestore()
 const { data: players, pending } = useCollection<Player>(collection(db, 'players'))
 
+const playersData = computed(() => {
+  if (!players.value) return []
+
+  return players.value.map((player) => ({
+    ...player,
+    id: player.id,
+  })) as Player[]
+})
+const headers = [
+  { key: 'name', title: 'Player' },
+  { key: 'position', title: 'Position', width: '150px' },
+  { key: 'birthDate', title: 'Age', width: '150px' },
+  { key: 'createdBy', title: 'Creator', width: '200px' },
+  { key: 'id', width: '120px', sortable: false },
+]
 const positions = {
-  g: 'Guard',
-  f: 'Forward',
-  c: 'Center',
+  [PlayerPosition.GUARD]: 'Guard',
+  [PlayerPosition.FORWARD]: 'Forward',
+  [PlayerPosition.CENTER]: 'Center',
 }
-const teams: Team[] = []
 const deletePlayer = (id: string) => {
   console.log(id)
 }
 </script>
 
 <template>
-  <section>
-    <v-row>
-      <v-col>
-        <h1>Players</h1>
-      </v-col>
-      <v-spacer />
-      <v-col cols="2" class="text-end">
-        <AddPlayerModal v-if="can(Permissions.PLAYER_CREATE)" />
-      </v-col>
-    </v-row>
-    <div v-if="pending">Loading...</div>
-    <v-table v-else-if="players.length">
-      <thead>
-        <tr>
-          <th class="text-left">Name</th>
-          <th class="text-left">Position</th>
-          <th class="text-left">Teams</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-for="player in players" :key="player.id">
-          <td class="w-75">
-            <AppPlayerPhoto :photo="player.photo" class="me-2" />
-            {{ player.name }}
-          </td>
-          <td>{{ player.position ? positions[player.position] : '&ndash;' }}</td>
-          <td>
-            <RouterLink
-              v-for="team in teams"
-              :key="team.id"
-              :to="{ name: 'team-edit', params: { id: team.id } }"
-            >
-              {{ team.name }}
-            </RouterLink>
-          </td>
-          <td class="text-right">
-            <v-btn
-              v-if="can(Permissions.PLAYER_UPDATE)"
-              size="x-small"
-              icon="mdi-pencil"
-              class="me-2"
-            />
-            <v-btn
-              v-if="can(Permissions.PLAYER_DELETE)"
-              color="error"
-              size="x-small"
-              icon="mdi-delete"
-              @click="deletePlayer(player.id)"
-            />
-          </td>
-        </tr>
-      </tbody>
-    </v-table>
-  </section>
+  <v-sheet border rounded>
+    <v-data-table :items="playersData" :headers="headers" :loading="pending">
+      <template #top>
+        <v-toolbar title="Players" color="transparent" />
+      </template>
+      <template v-slot:loading>
+        <v-skeleton-loader type="table-row@4" />
+      </template>
+
+      <template #[`item.name`]="{ item }">
+        <div class="d-flex align-center ga-4">
+          <AppPlayerPhoto :photo="item.photo" />
+          <div>
+            <p class="text-body-1">{{ item.name }}</p>
+            <p class="text-caption font-weight-thin text-grey-darken-1">#{{ item.id }}</p>
+          </div>
+        </div>
+      </template>
+      <template #[`item.position`]="{ value }">
+        {{ positions[value as PlayerPosition] }}
+      </template>
+      <template #[`item.id`]="{ item }">
+        <v-btn
+          v-if="can(Permissions.PLAYER_UPDATE)"
+          size="x-small"
+          icon="mdi-pencil"
+          class="me-2"
+        />
+        <v-btn
+          v-if="can(Permissions.PLAYER_DELETE)"
+          color="error"
+          size="x-small"
+          icon="mdi-delete"
+          @click="deletePlayer(item.id)"
+        />
+      </template>
+    </v-data-table>
+  </v-sheet>
 </template>

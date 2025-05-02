@@ -33,7 +33,7 @@ const doSubmit = async () => {
       name: state.name,
       status: 'new',
       createdAt: Timestamp.fromDate(new Date()),
-      createdBy: user.value?.uid,
+      createdBy: user.value,
     })
   } catch (e) {
     console.error(e)

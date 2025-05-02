@@ -56,7 +56,7 @@ const doSubmit = async () => {
     }
 
     const player = await addDoc(collection(db, 'players'), {
-      ...Object.fromEntries(Object.entries(state).filter(([_, v]) => v != null)),
+      ...Object.fromEntries(Object.entries(state).filter(([, v]) => v != null)),
       photo: url.value,
       fullName: state.name.toLocaleLowerCase().split(' '),
       createdAt: Timestamp.fromDate(new Date()),
